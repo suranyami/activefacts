@@ -20,20 +20,18 @@ span {
 }
 
 .keyword {
-  Xcolor: #00F;
-  color: #66F;
+  color: #0000CC;
 }
 .term, .concept {
-  Xcolor: #808;
-  color: #E0E;
+  /* Xcolor: #6A0072;   The color used by NORMA */
+  color: #8A0092;
 }
 .vocabulary, .object_type {
-  Xcolor: #808;
-  color: #E0E;
+  /* Xcolor: #6A0072;   The color used by NORMA */
+  color: #8A0092;
 }
 .linking, .copula {
-  Xcolor: #060;
-  color: #0C0;
+  color: #0E5400;
 }
 .literal, .value {
   color: #FF990E;
@@ -41,4 +39,56 @@ span {
 
 dd {
   margin-bottom: 0.5em;
+}
+
+.glossary-toc {
+  display: block;
+  margin: 0;
+  padding: 0 16px;
+  background: #EEE;
+  list-style: none;
+  font-family: Menlo, Consolas, Monaco, "Lucida Console", monospace;
+  overflow: auto;
+  border-right: solid #DDD 3px;
+  height: 100%;
+  float: right;
+  width: 240px;
+}
+
+.glossary-doc {
+  display: block;
+  background: #FFF;
+  border-right: solid #EEE 3px;
+  font: 300 16px/1.4 "Myriad Pro", "Helvetica Neue", Helvetica, "Arial Unicode MS", Arial, sans-serif;
+  height: 100%;
+  margin: 0;
+  overflow: auto;
+  padding: 0 30px;
+
+  left: 0px;
+  right: 240px;
+}
+
+.glossary-toc li {
+  margin-left: 20px;
+  text-indent: -20px;
+}
+
+.glossary-doc dl {
+  margin-bottom: 1600px;
+}
+
+.glossary-doc dd {
+  margin-bottom: 30px;
+}
+
+.value {
+  display: inline;
+}
+
+.keyword,
+.glossary-facttype,
+.glossary-reading {
+  display: inline;
+  background: #E8E8E8;
 }

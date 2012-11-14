@@ -28,7 +28,7 @@ module ActiveFacts
         end
 
         def compile
-          @entity_type = @constellation.EntityType(@vocabulary, @name)
+          @entity_type = @constellation.EntityType(@vocabulary, @name, :guid => :new)
           @entity_type.is_independent = true if (@pragmas.include? 'independent')
 
           # REVISIT: CQL needs a way to indicate whether subtype migration can occur.
@@ -47,7 +47,7 @@ module ActiveFacts
           # Create the fact types that define the identifying roles:
           fact_types = create_identifying_fact_types context
 
-          # At this point, @identification is an array of VarRefs and/or Clauses (for unary fact types)
+          # At this point, @identification is an array of References and/or Clauses (for unary fact types)
           # Have to do this after creating the necessary fact types
           complete_reference_mode_fact_type fact_types
 
@@ -70,7 +70,7 @@ module ActiveFacts
             if @identification.is_a? ReferenceMode
               make_entity_type_refmode_valuetypes(name, @identification.name, @identification.parameters)
               vt_name = @reference_mode_value_type.name
-              @identification = [Compiler::VarRef.new(vt_name, nil, nil, nil, nil, nil, @identification.value_constraint, nil)]
+              @identification = [Compiler::Reference.new(vt_name, nil, nil, nil, nil, nil, @identification.value_constraint, nil)]
             else
               context.allowed_forward_terms = legal_forward_references(@identification)
             end
@@ -80,16 +80,16 @@ module ActiveFacts
         # Names used in the identifying roles list may be forward referenced:
         def legal_forward_references(identification_phrases)
           identification_phrases.map do |phrase|
-            phrase.is_a?(VarRef) ? phrase.term : nil
+            phrase.is_a?(Reference) ? phrase.term : nil
           end.compact.uniq
         end
 
         def bind_identifying_roles context
           return unless @identification
           @identification.map do |id|
-            if id.is_a?(VarRef)
-              variable = id.variable
-              roles = variable.refs.map{|r| r.role}.compact.uniq
+            if id.is_a?(Reference)
+              binding = id.binding
+              roles = binding.refs.map{|r| r.role}.compact.uniq
               raise "Looking for an occurrence of identifying role #{id.inspect}, but found #{roles.size == 0 ? "none" : roles.size}" if roles.size != 1
               roles[0]
             else
@@ -147,7 +147,7 @@ module ActiveFacts
           fact_types = []
           # Categorise the clauses into fact types according to the roles they play.
           @clauses.inject({}) do |hash, clause|
-            players_key = clause.var_refs.map{|vr| vr.key.compact}.sort
+            players_key = clause.refs.map{|vr| vr.key.compact}.sort
             (hash[players_key] ||= []) << clause
             hash
           end.each do |players_key, clauses|
@@ -170,7 +170,7 @@ module ActiveFacts
           any_matched = existing_clauses.size > 0
 
           operation = any_matched ? 'Objectifying' : 'Creating'
-          player_names = clauses[0].var_refs.map{|vr| vr.key.compact*'-'}
+          player_names = clauses[0].refs.map{|vr| vr.key.compact*'-'}
           debug :matching, "#{operation} fact type for #{clauses.size} clauses over (#{player_names*', '})" do
             if any_matched  # There's an existing fact type we must be objectifying
               fact_type = objectify_existing_fact_type(existing_clauses[0].fact_type)
@@ -214,7 +214,7 @@ module ActiveFacts
 
         def add_supertype(supertype_name, not_identifying)
           debug :supertype, "Adding supertype #{supertype_name}" do
-            supertype = @constellation.EntityType(@vocabulary, supertype_name)
+            supertype = @constellation.EntityType(@vocabulary, supertype_name, :guid => :new)
 
             # Did we already know about this supertype?
             return if @entity_type.all_type_inheritance_as_subtype.detect{|ti| ti.supertype == supertype}
@@ -222,15 +222,15 @@ module ActiveFacts
             # By default, the first supertype identifies this entity type
             is_identifying_supertype = !not_identifying && @entity_type.all_type_inheritance_as_subtype.size == 0
 
-            inheritance_fact = @constellation.TypeInheritance(@entity_type, supertype, :fact_type_id => :new)
+            inheritance_fact = @constellation.TypeInheritance(@entity_type, supertype, :guid => :new)
 
             assimilations = @pragmas.select { |p| ['absorbed', 'separate', 'partitioned'].include? p}
             raise "Conflicting assimilation pragmas #{assimilations*', '}" if assimilations.size > 1
             inheritance_fact.assimilation = assimilations[0]
 
             # Create a reading:
-            sub_role = @constellation.Role(inheritance_fact, 0, :object_type => @entity_type)
-            super_role = @constellation.Role(inheritance_fact, 1, :object_type => supertype)
+            sub_role = @constellation.Role(inheritance_fact, 0, :object_type => @entity_type, :guid => :new)
+            super_role = @constellation.Role(inheritance_fact, 1, :object_type => supertype, :guid => :new)
 
             rs = @constellation.RoleSequence(:new)
             @constellation.RoleRef(rs, 0, :role => sub_role)
@@ -279,8 +279,8 @@ module ActiveFacts
             # Find or Create an appropriate ValueType called '#{vt_name}', of the supertype '#{mode}'
             unless vt = @constellation.ObjectType[[@vocabulary.identifying_role_values, vt_name]] or
                    vt = @constellation.ObjectType[[@vocabulary.identifying_role_values, vt_name = "#{name} #{mode}"]]
-              base_vt = @constellation.ValueType(@vocabulary, mode)
-              vt = @constellation.ValueType(@vocabulary, vt_name, :supertype => base_vt)
+              base_vt = @constellation.ValueType(@vocabulary, mode, :guid => :new)
+              vt = @constellation.ValueType(@vocabulary, vt_name, :supertype => base_vt, :guid => :new)
               if parameters
                 length, scale = *parameters
                 vt.length = length if length
@@ -313,8 +313,8 @@ module ActiveFacts
           unless fact_type
             fact_type = @constellation.FactType(:new)
             fact_types << fact_type
-            entity_role = @constellation.Role(fact_type, 0, :object_type => @entity_type)
-            identifying_role = @constellation.Role(fact_type, 1, :object_type => identifying_type)
+            entity_role = @constellation.Role(fact_type, 0, :object_type => @entity_type, :guid => :new)
+            identifying_role = @constellation.Role(fact_type, 1, :object_type => identifying_type, :guid => :new)
           end
           @identification[0].role = identifying_role
 

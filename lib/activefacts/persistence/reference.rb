@@ -203,7 +203,7 @@ module ActiveFacts
   end
 
   module Metamodel          #:nodoc:
-    class ObjectType
+    class ObjectType < Concept
       # Say whether the independence of this object is still under consideration
       # This is used in detecting dependency cycles, such as occurs in the Metamodel
       attr_accessor :tentative          #:nodoc:
@@ -259,7 +259,7 @@ module ActiveFacts
         all_role.each do |role|
           # It's possible that this role is in an implicit or derived fact type. Skip it if so.
           next if role.fact_type.is_a?(ImplicitFactType) or
-            role.fact_type.preferred_reading.role_sequence.all_role_ref.to_a[0].join_role
+            role.fact_type.preferred_reading.role_sequence.all_role_ref.to_a[0].play
           
           populate_reference role
         end

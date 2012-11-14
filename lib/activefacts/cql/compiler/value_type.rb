@@ -16,9 +16,13 @@ module ActiveFacts
         def compile
           if (@numerator.to_f / @denominator.to_i != 1.0)
             coefficient = @constellation.Coefficient(
-                :numerator => @numerator,
-                :denominator => @denominator.to_i,
-                :is_precise => !@approximately
+                @numerator,
+                @denominator.to_i,
+                !@approximately
+                # REVISIT: Activefacts-api is complaining at present. The following is better and should work:
+                # :numerator => @numerator,
+                # :denominator => @denominator.to_i,
+                # :is_precise => !@approximately
               )
           else
             coefficient = nil
@@ -99,13 +103,13 @@ module ActiveFacts
           base_type = nil
           if (@base_type_name != @name)
             unless base_type = @constellation.ValueType[[@vocabulary.identifying_role_values, @constellation.Name(@base_type_name)]]
-              base_type = @constellation.ValueType(@vocabulary, @base_type_name)
+              base_type = @constellation.ValueType(@vocabulary, @base_type_name, :guid => :new)
               return base_type if @base_type_name == @name
             end
           end
 
           # Create and initialise the ValueType:
-          vt = @constellation.ValueType(@vocabulary, @name)
+          vt = @constellation.ValueType(@vocabulary, @name, :guid => :new)
           vt.is_independent = true if (@pragmas.include? 'independent')
           vt.supertype = base_type if base_type
           vt.length = length if length

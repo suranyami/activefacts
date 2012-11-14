@@ -12,7 +12,7 @@ require 'activefacts/cql/compiler/fact_type'
 require 'activefacts/cql/compiler/expression'
 require 'activefacts/cql/compiler/fact'
 require 'activefacts/cql/compiler/constraint'
-require 'activefacts/cql/compiler/join'
+require 'activefacts/cql/compiler/query'
 
 module ActiveFacts
   module CQL
@@ -64,6 +64,27 @@ module ActiveFacts
         end
         raise failure_reason unless ok
         vocabulary
+      end
+
+      def compile_import file, aliases
+        saved_index = @index
+        saved_block = @block
+        old_filename = @filename
+        @filename = file+'.cql'
+
+        File.open(@filename) do |f|
+          ok = parse_all(f.read, nil, &@block)
+        end
+
+      rescue => e
+        ne = StandardError.new("In #{@filename} #{e.message.strip}")
+        ne.set_backtrace(e.backtrace)
+        raise ne
+      ensure
+        @block = saved_block
+        @index = saved_index
+        @filename = old_filename
+        nil
       end
 
       def compile_definition ast

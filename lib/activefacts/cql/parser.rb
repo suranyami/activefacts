@@ -18,6 +18,14 @@ require 'activefacts/cql/FactTypes'
 require 'activefacts/cql/Context'
 require 'activefacts/cql/CQLParser'
 
+module ActiveFacts
+  module CQL
+    class Parser < CQLParser
+    end
+  end
+end
+require 'activefacts/cql/nodes'
+
 class Treetop::Runtime::SyntaxNode
   def node_type
     terminal? ? :keyword : :composite
@@ -33,7 +41,7 @@ module ActiveFacts
     end
 
     # Extend the generated parser:
-    class Parser < CQLParser
+    class Parser
       include ActiveFacts
 
       # The Context manages some key information revealed or needed during parsing
@@ -156,11 +164,12 @@ module ActiveFacts
       end
 
       class InputProxy
-        attr_reader :context
+        attr_reader :context, :parser
 
-        def initialize(input, context)
+        def initialize(input, context, parser)
           @input = input
           @context = context
+          @parser = parser
         end
 
         def length
@@ -198,7 +207,7 @@ module ActiveFacts
       end
 
       def parse(input, options = {})
-        input = InputProxy.new(input, context) unless input.respond_to?(:context)
+        input = InputProxy.new(input, context, self) unless input.respond_to?(:context)
         super(input, options)
       end
 
@@ -206,18 +215,19 @@ module ActiveFacts
         self.root = rule_name if rule_name
 
         @index = 0  # Byte offset to start next parse
+        @block = block
         self.consume_all_input = false
         nodes = []
         begin
-          node = parse(InputProxy.new(input, context), :index => @index)
+          node = parse(InputProxy.new(input, context, self), :index => @index)
           return nil unless node
-          if block
-            block.call(node)
+          if @block
+            @block.call(node)
           else
             nodes << node
           end
         end until self.index == @input_length
-        block ? true : nodes
+        @block ? true : nodes
       end
     end
 
