@@ -1,10 +1,10 @@
+require 'rubygems'
 #
 # A Custom Matcher for RSpec that shows the difference between two multi-line strings.
 #
 # Usage:
 #   actual_text.should_not differ_from(expected_text)
 #
-
 require 'helpers/diff_matcher'
 require 'helpers/array_matcher'
 require 'helpers/file_matcher'
