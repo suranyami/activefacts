@@ -16,7 +16,7 @@ module ActiveFacts
     # Invoke as
     #   afgen --ar[=options] <file>.cql
     # Options are comma or space separated:
-    class AR
+    class Ar
       include Persistence
 
       def initialize(vocabulary, *options)
@@ -35,24 +35,40 @@ module ActiveFacts
       public
       def generate(out = $>)
         @out = out
-        @vocabulary.tables.each do |table|
-          migration table do
-            table.columns.each do |column|
+        m = @vocabulary.tables.collect do |table|
+          migration(table) do
+            table.columns.collect do |column|
               type, params, constraints = column.type
-              field(column.name, type)
-            end
+              col(column.name, type)
+            end.join
           end
         end
+        puts m.join
       end
 
       private
 
-      def field(name, type)
+      def col(name, type)
         type = normalise_type(type)
         <<-HERE
-            t.#{type} "#{name}"
+              t.#{type} "#{name}"
+HERE
+      end
+
+      def migration(table)
+        <<-HERE
+        class Create#{table.name.capitalize.pluralize} < ActiveRecord::Migration
+          def change
+            create_table #{table.name.tableize} do |t|
+#{yield}
+              t.timestamps
+            end
+          end
+        end
+
         HERE
       end
+
 
       def normalise_type(type, length = 0)
         case type
@@ -96,20 +112,6 @@ module ActiveFacts
         else
           type
         end
-      end
-
-      def migration(table)
-        <<-HERE
-        class Create#{table.name.capitalize.pluralize} < ActiveRecord::Migration
-          def change
-            create_table #{table.name.tableize} do |t|
-              #{yield}
-              t.timestamps
-            end
-          end
-        end
-
-        HERE
       end
     end
   end
