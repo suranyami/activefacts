@@ -10,12 +10,12 @@ module ActiveFacts
   module Generate #:nodoc:
     module Transform #:nodoc:
       class AR
-	def initialize(vocabulary, *options)
-	end
+       def initialize(vocabulary, *options)
+       end
 
-	def transform
-	end
-      end
-    end
-  end
+       def transform
+       end
+     end
+   end
+ end
 end
