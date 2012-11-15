@@ -51,7 +51,7 @@ module ActiveFacts
       def col(name, type)
         type = normalise_type(type)
         <<-HERE
-              t.#{type} "#{name}"
+              t.#{type} :#{name.underscore}
 HERE
       end
 
@@ -108,7 +108,7 @@ HERE
         when /^Variable ?Length ?Raw ?Data$/, /^Blob$/
           'blob'
         when /^BIT$/
-          'bit'
+          'boolean'
         else
           type
         end
