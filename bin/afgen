@@ -24,13 +24,15 @@ arg = ARGV.shift || "--help"
 while arg =~ /^--([^=]*)(?:=(.*))?/
   begin
     require "activefacts/generate/#{$1}"
+
     new_generators = ActiveFacts::Generate.constants
+
     new_transforms = ActiveFacts::Generate::Transform.constants
     options = ($2||"").split(/,/)
-    generators += (new_generators-base_generators).map do |generator|
+    generators += (new_generators - base_generators).map do |generator|
       [ generator, options ]
     end
-    transforms += (new_transforms-base_transforms).map do |transform|
+    transforms += (new_transforms - base_transforms).map do |transform|
       [ transform, options ]
     end
     base_generators = new_generators
