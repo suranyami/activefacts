@@ -94,6 +94,7 @@ Gem::Specification.new do |s|
     "lib/activefacts/cql/nodes.rb",
     "lib/activefacts/cql/parser.rb",
     "lib/activefacts/generate/absorption.rb",
+    "lib/activefacts/generate/ar.rb",
     "lib/activefacts/generate/cql.rb",
     "lib/activefacts/generate/dm.rb",
     "lib/activefacts/generate/help.rb",
