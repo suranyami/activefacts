@@ -20,3 +20,4 @@ pkg
 queries
 spec/log
 *.log
+tmp
