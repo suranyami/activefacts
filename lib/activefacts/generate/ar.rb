@@ -22,6 +22,9 @@ module ActiveFacts
       def initialize(vocabulary, *options)
         @vocabulary = vocabulary
         @vocabulary = @vocabulary.Vocabulary.values[0] if ActiveFacts::API::Constellation === @vocabulary
+        @dir =        options.detect {|opt| opt =~ /\Adir=(.*)/} && $1
+        @schema_dir = options.detect {|opt| opt =~ /\Aschema-dir=(.*)/} && $1
+        @out = $>
       end
 
       def puts s
@@ -35,6 +38,32 @@ module ActiveFacts
       public
       def generate(out = $>)
         @out = out
+        out_schema
+        out_models
+      end
+
+      private
+
+      def out_models
+        @vocabulary.tables.collect do |table|
+          path = File.join(@dir, "#{table.name.capitalize.underscore}.rb")
+          @out = File.open(path, 'w')
+          ar_model = model(table) do
+            table.columns.collect do |column|
+              type, params, constraints = column.type
+              col_name = column.name.underscore
+              attrs = attribute(col_name)
+              consts = constraints.collect do |constraint|
+                validation(col_name, constraint)
+              end
+              "#{attrs}\n#{consts}"
+            end.join
+          end
+          puts ar_model
+        end
+      end
+
+      def out_schema
         m = @vocabulary.tables.collect do |table|
           migration(table) do
             table.columns.collect do |column|
@@ -46,7 +75,38 @@ module ActiveFacts
         puts m.join
       end
 
-      private
+      def model(table)
+<<-HERE
+class #{table.name.classify} < ActiveRecord::Base
+#{yield}
+end
+HERE
+      end
+
+      def attribute(column)
+<<-HERE
+  attr_accessible :#{column}
+HERE
+      end
+
+      def validation(column, constraint)
+        case constraint.class
+        when ActiveFacts::Metamodel::ValueConstraint
+          allowed_range = constraint.all_allowed_range
+          min = allowed_range.value_range.minimum_bound.value
+          max = allowed_range.value_range.maximum_bound.value
+          numerical = (min.is_a?(Number) && max.is_a?(Number))
+return <<-HERE
+  validates :#{column}, :numericality => true
+HERE
+        when ActiveFacts::Metamodel::PresenceConstraint
+          if constraint.is_mandatory
+return <<-HERE
+  validates :#{column}, :presence => true
+HERE
+          end
+        end
+      end
 
       def col(name, type)
         type = normalise_type(type)
